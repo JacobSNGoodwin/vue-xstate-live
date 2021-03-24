@@ -1,26 +1,71 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png" />
-  <HelloWorld msg="Welcome to Your Vue.js App" />
+  <h1>A Basic Counter App</h1>
+  <div>
+    <button @click="send('INCREMENT')" :disabled="state.matches('inactive')">
+      Increment
+    </button>
+    <button @click="send('DECREMENT')" :disabled="state.matches('inactive')">
+      Decrement
+    </button>
+  </div>
+  <h3>Count: {{ state.context.count.toFixed(2) }}</h3>
+
+  <div>
+    <button @click="send('TOGGLE')">{{ toggleButtonLabel }}</button>
+  </div>
+  <h3>Current State: {{ state.value }}</h3>
+
+  <h3>Increment by:</h3>
+  <div>
+    <input
+      type="number"
+      v-model.number="incVal"
+      :disabled="state.matches('inactive')"
+    />
+  </div>
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld.vue";
+import { computed, ref, watchEffect } from "vue";
+import { useMachine } from "@xstate/vue";
+import counterMachine from "./counterMachine";
 
 export default {
   name: "App",
-  components: {
-    HelloWorld
+  setup() {
+    const incVal = ref(1);
+    const { state, send } = useMachine(counterMachine);
+
+    const toggleButtonLabel = computed(() => {
+      const current = state.value; // have to extract value as state is wrapped in vue "ref"
+      if (current.matches("active")) {
+        return "Inactivate";
+      } else if (current.matches("inactive")) {
+        return "Activate";
+      } else {
+        return "I'm kinda impressed you got to this state!";
+      }
+    });
+
+    watchEffect(() =>
+      send({
+        type: "UPDATE_INC_VAL",
+        incVal: incVal.value || 0
+      })
+    );
+
+    return {
+      state,
+      send,
+      toggleButtonLabel,
+      incVal
+    };
   }
 };
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+button {
+  margin: 0.5em;
 }
 </style>
